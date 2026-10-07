@@ -43,9 +43,8 @@ npm run dev
 ## Установка на Ubuntu VPS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ArnGoldt/auto/main/scripts/deploy/ubuntu-server.sh -o install-autoportal.sh
-chmod +x install-autoportal.sh
-./install-autoportal.sh
+git clone --depth 1 https://github.com/ArnGoldt/auto.git ~/auto
+bash ~/auto/scripts/deploy/ubuntu-server.sh
 ```
 
 Сервис слушает порт **43123** (`systemctl status autoportal`). Подробнее: `scripts/deploy/ubuntu-server.sh`.
