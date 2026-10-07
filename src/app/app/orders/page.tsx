@@ -3,7 +3,7 @@ import { clients, orders, vehicles, workshops } from "@/db/schema";
 import { requireStaff } from "@/lib/staff-data";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
-import { Badge } from "@/components/ui-shell";
+import { Badge, Card, EmptyState, PageTitle } from "@/components/ui-shell";
 
 export default async function OrdersPage() {
   const { session } = await requireStaff();
@@ -23,25 +23,39 @@ export default async function OrdersPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold">Заказы</h2>
-      <ul className="mt-4 space-y-3">
-        {rows.map(({ order, clientName, vehicle, workshopName }) => (
-          <li key={order.id} className="rounded-xl border bg-white p-4">
-            <div className="flex flex-wrap justify-between gap-2">
-              <div>
-                <Link href={`/app/orders/${order.id}`} className="font-medium text-blue-700">
-                  {clientName} · {vehicle.make} {vehicle.model}
-                </Link>
-                <p className="text-sm text-zinc-600">{workshopName}</p>
-              </div>
-              <div className="flex gap-2">
-                <Badge>продажа: {order.salesStage}</Badge>
-                <Badge>цех: {order.productionStage}</Badge>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <PageTitle
+        title="Заказы"
+        description={`${rows.length} заказов в организации`}
+      />
+      {rows.length === 0 ? (
+        <EmptyState title="Заказов пока нет" />
+      ) : (
+        <ul className="space-y-3">
+          {rows.map(({ order, clientName, vehicle, workshopName }) => (
+            <li key={order.id}>
+              <Card className="transition-shadow hover:shadow-[var(--shadow-elevated)]">
+                <div className="flex flex-wrap justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/app/orders/${order.id}`}
+                      className="font-semibold text-[var(--navy-900)] underline-offset-2 hover:text-[var(--accent-hover)] hover:underline"
+                    >
+                      {clientName} · {vehicle.make} {vehicle.model}
+                    </Link>
+                    <p className="mt-0.5 text-sm text-[var(--muted)]">
+                      {workshopName}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="info">продажа: {order.salesStage}</Badge>
+                    <Badge variant="accent">цех: {order.productionStage}</Badge>
+                  </div>
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

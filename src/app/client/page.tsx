@@ -16,7 +16,7 @@ import { getClientSession } from "@/lib/session";
 import { formatRub } from "@/lib/utils";
 import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { Button, Badge } from "@/components/ui-shell";
+import { Button, Badge, Card, EmptyState } from "@/components/ui-shell";
 
 export default async function ClientHomePage() {
   const session = await getClientSession();
@@ -65,81 +65,106 @@ export default async function ClientHomePage() {
     }),
   );
 
-  const primary = orderViews[0];
-
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">Здравствуйте, {client?.fullName}</h2>
-        <p className="text-sm text-zinc-600">Ваши ремонты в сети мастерских</p>
+        <h2 className="text-2xl font-bold tracking-tight text-[var(--navy-900)]">
+          Здравствуйте, {client?.fullName}
+        </h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Ваши ремонты в сети мастерских
+        </p>
       </div>
 
-      {!primary && (
-        <p className="rounded-xl border bg-white p-6 text-zinc-600">
-          Пока нет активных заказов
-        </p>
+      {orderViews.length === 0 && (
+        <EmptyState
+          title="Пока нет активных заказов"
+          description="Когда мастерская оформит заказ, статус появится здесь"
+        />
       )}
 
       {orderViews.map(
         ({ order, vehicle, workshop, events, pendingSupps, total }) => (
-          <section key={order.id} className="rounded-xl border bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold">
-              {vehicle?.make} {vehicle?.model} · {workshop?.name}
+          <Card key={order.id} padding="lg">
+            <h3 className="text-lg font-bold text-[var(--navy-900)]">
+              {vehicle?.make} {vehicle?.model}
+              <span className="font-normal text-[var(--muted)]">
+                {" "}
+                · {workshop?.name}
+              </span>
             </h3>
-            <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              <Badge>сейчас: {order.productionStage}</Badge>
-              <Badge>
-                выдача: {order.promisedDateCurrent?.toLocaleDateString("ru-RU") ?? "—"}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge variant="accent">сейчас: {order.productionStage}</Badge>
+              <Badge variant="info">
+                выдача:{" "}
+                {order.promisedDateCurrent?.toLocaleDateString("ru-RU") ?? "—"}
               </Badge>
-              <Badge>к оплате (смета): {formatRub(total)}</Badge>
+              <Badge variant="success">к оплате: {formatRub(total)}</Badge>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg bg-zinc-50 p-3 text-sm">
-                <p className="font-medium">Что сделано / лента</p>
-                <ul className="mt-2 space-y-1 text-zinc-700">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="rounded-[var(--radius-lg)] bg-[var(--surface-muted)] p-4 text-sm">
+                <p className="font-semibold text-[var(--navy-900)]">
+                  Что сделано / лента
+                </p>
+                <ul className="mt-3 space-y-2 text-[var(--muted-foreground)]">
                   {events.slice(0, 5).map((e) => (
-                    <li key={e.id}>
+                    <li key={e.id} className="border-b border-[var(--border-subtle)] pb-2 last:border-0">
                       {e.title}{" "}
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-[var(--muted)]">
                         {e.createdAt.toLocaleString("ru-RU")}
                       </span>
                     </li>
                   ))}
-                  {events.length === 0 && <li>Ожидайте подтверждённых событий</li>}
+                  {events.length === 0 && (
+                    <li className="text-[var(--muted)]">
+                      Ожидайте подтверждённых событий
+                    </li>
+                  )}
                 </ul>
               </div>
-              <div className="rounded-lg bg-zinc-50 p-3 text-sm">
-                <p className="font-medium">Нужно ваше решение</p>
+              <div className="rounded-[var(--radius-lg)] bg-[var(--surface-muted)] p-4 text-sm">
+                <p className="font-semibold text-[var(--navy-900)]">
+                  Нужно ваше решение
+                </p>
                 {pendingSupps.length === 0 && (
-                  <p className="mt-2 text-zinc-600">Нет ожидающих согласований</p>
+                  <p className="mt-3 text-[var(--muted)]">
+                    Нет ожидающих согласований
+                  </p>
                 )}
                 {pendingSupps.map((s) => (
-                  <div key={s.id} className="mt-2 rounded border bg-white p-3">
-                    <p>{s.reason}</p>
-                    <p className="font-medium">{formatRub(s.priceDeltaRub)}</p>
-                    <div className="mt-2 flex gap-2">
+                  <div
+                    key={s.id}
+                    className="mt-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-3"
+                  >
+                    <p className="text-[var(--navy-800)]">{s.reason}</p>
+                    <p className="mt-1 text-lg font-bold tabular-nums text-[var(--navy-900)]">
+                      {formatRub(s.priceDeltaRub)}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <form action={decideSupplement}>
                         <input type="hidden" name="supplementId" value={s.id} />
                         <input type="hidden" name="decision" value="approve" />
-                        <Button type="submit" className="py-2 text-xs">
+                        <Button type="submit" size="sm">
                           Согласовать
                         </Button>
                       </form>
                       <form action={decideSupplement}>
                         <input type="hidden" name="supplementId" value={s.id} />
                         <input type="hidden" name="decision" value="reject" />
-                        <Button type="submit" variant="secondary" className="py-2 text-xs">
+                        <Button type="submit" variant="secondary" size="sm">
                           Отклонить
                         </Button>
                       </form>
                     </div>
-                    <p className="mt-2 text-xs text-zinc-500">Не ЭП — фиксируется факт нажатия</p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      Не ЭП — фиксируется факт нажатия
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
-          </section>
+          </Card>
         ),
       )}
     </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getClientSession } from "@/lib/session";
 import { clientLogout } from "@/app/actions/auth";
+import { Button, ClientChrome } from "@/components/ui-shell";
 
 export default async function ClientLayout({
   children,
@@ -10,24 +11,30 @@ export default async function ClientLayout({
   const session = await getClientSession();
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b bg-white px-4 py-3">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <h1 className="font-semibold">Личный кабинет</h1>
-          {session ? (
-            <form action={clientLogout}>
-              <button type="submit" className="text-sm text-blue-700">
-                Выйти
-              </button>
-            </form>
-          ) : (
-            <Link href="/client/login" className="text-sm text-blue-700">
-              Войти
-            </Link>
-          )}
-        </div>
-      </header>
-      <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
-    </div>
+    <ClientChrome
+      headerRight={
+        session ? (
+          <form action={clientLogout}>
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              className="text-slate-300 hover:text-white"
+            >
+              Выйти
+            </Button>
+          </form>
+        ) : (
+          <Link
+            href="/client/login"
+            className="rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold text-amber-400 hover:text-amber-300"
+          >
+            Войти
+          </Link>
+        )
+      }
+    >
+      {children}
+    </ClientChrome>
   );
 }
