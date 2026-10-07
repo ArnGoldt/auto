@@ -40,6 +40,16 @@ npm run dev
 - `/client` — личный кабинет клиента
 - `/request` — публичная заявка (только лид)
 
+## Установка на Ubuntu VPS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ArnGoldt/auto/main/scripts/deploy/ubuntu-server.sh -o install-autoportal.sh
+chmod +x install-autoportal.sh
+./install-autoportal.sh
+```
+
+Сервис слушает порт **43123** (`systemctl status autoportal`). Подробнее: `scripts/deploy/ubuntu-server.sh`.
+
 ## Скрипты
 
 - `npm run db:push` — схема БД
