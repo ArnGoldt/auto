@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f6f9;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-muted: #eef1f6;
+  --border: #d8dee9;
+  --border-subtle: #e8ecf2;
+
+  --navy-950: #070b14;
+  --navy-900: #0c1222;
+  --navy-800: #151d33;
+  --navy-700: #1e2942;
+
+  --accent: #f59e0b;
+  --accent-hover: #d97706;
+  --accent-muted: #fef3c7;
+  --accent-foreground: #451a03;
+
+  --muted: #64748b;
+  --muted-foreground: #475569;
+
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --info: #0284c7;
+  --info-bg: #f0f9ff;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  --shadow-card: 0 1px 3px rgb(12 18 34 / 0.06), 0 4px 12px rgb(12 18 34 / 0.04);
+  --shadow-elevated: 0 4px 24px rgb(12 18 34 / 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Focus visible for form controls site-wide */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

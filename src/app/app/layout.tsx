@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { AppShell } from "@/components/ui-shell";
+import { AppShell, Button } from "@/components/ui-shell";
 import { requireStaff } from "@/lib/staff-data";
 import { staffHomePath } from "@/lib/rbac";
 import { redirect } from "next/navigation";
@@ -31,15 +31,17 @@ export default async function ManagerAppLayout({
 
   return (
     <AppShell
-      title={`Менеджер · ${user?.fullName ?? ""}`}
+      title={user?.fullName ?? "Менеджер"}
       nav={nav}
       wide
+      logoutSlot={
+        <form action={staffLogout} className="mt-0.5">
+          <Button type="submit" variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+            Выйти
+          </Button>
+        </form>
+      }
     >
-      <form action={staffLogout} className="mb-4 text-right">
-        <button type="submit" className="text-sm text-zinc-500 hover:underline">
-          Выйти
-        </button>
-      </form>
       {children}
     </AppShell>
   );

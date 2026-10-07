@@ -3,6 +3,13 @@ import { inquiries, managerReminders, orders, workshops } from "@/db/schema";
 import { requireStaff } from "@/lib/staff-data";
 import { eq, and, count } from "drizzle-orm";
 import Link from "next/link";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  PageTitle,
+  StatCard,
+} from "@/components/ui-shell";
 
 export default async function AppDashboardPage() {
   const { session } = await requireStaff();
@@ -26,52 +33,67 @@ export default async function AppDashboardPage() {
 
   return (
     <div className="space-y-8">
+      <PageTitle
+        title="Обзор сети"
+        description={`${allWorkshops.length} филиалов · показатели в реальном времени`}
+      />
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Заказов в системе" value={openOrders[0]?.c ?? 0} accent="blue" />
+        <StatCard label="Новых обращений" value={openLeads[0]?.c ?? 0} accent="amber" />
+        <StatCard label="Активных напоминаний" value={reminders.length} accent="green" />
+      </section>
+
       <section>
-        <h2 className="text-lg font-semibold">Сеть мастерских</h2>
-        <p className="text-sm text-zinc-600">
-          Обзор по всем филиалам ({allWorkshops.length})
-        </p>
-        <ul className="mt-3 grid gap-2 md:grid-cols-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Мастерские
+        </h3>
+        <ul className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {allWorkshops.map((w) => (
-            <li key={w.id} className="rounded-xl border bg-white p-4">
-              <p className="font-medium">{w.name}</p>
-              <p className="text-sm text-zinc-600">{w.address}</p>
+            <li key={w.id}>
+              <Card className="h-full transition-shadow hover:shadow-[var(--shadow-elevated)]">
+                <p className="font-semibold text-[var(--navy-900)]">{w.name}</p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                  {w.address}
+                </p>
+              </Card>
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-4">
-          <p className="text-sm text-zinc-500">Заказов в системе</p>
-          <p className="text-2xl font-semibold">{openOrders[0]?.c ?? 0}</p>
-        </div>
-        <div className="rounded-xl border bg-white p-4">
-          <p className="text-sm text-zinc-500">Новых обращений</p>
-          <p className="text-2xl font-semibold">{openLeads[0]?.c ?? 0}</p>
-        </div>
-        <div className="rounded-xl border bg-white p-4">
-          <p className="text-sm text-zinc-500">Напоминания</p>
-          <p className="text-2xl font-semibold">{reminders.length}</p>
-        </div>
       </section>
 
       <section>
-        <h3 className="font-medium">Ближайшие задачи менеджера</h3>
-        <ul className="mt-2 space-y-2">
-          {reminders.map((r) => (
-            <li key={r.id} className="rounded-lg border bg-white px-3 py-2 text-sm">
-              {r.kind} · до {r.dueAt.toLocaleString("ru-RU")}
-            </li>
-          ))}
-          {reminders.length === 0 && (
-            <li className="text-sm text-zinc-500">Нет просроченных напоминаний</li>
-          )}
-        </ul>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Ближайшие задачи
+        </h3>
+        {reminders.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState
+              title="Нет просроченных напоминаний"
+              description="Новые задачи появятся здесь автоматически"
+            />
+          </div>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {reminders.map((r) => (
+              <li key={r.id}>
+                <Card padding="sm" className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="font-medium">{r.kind}</span>
+                  <Badge variant="warning">
+                    до {r.dueAt.toLocaleString("ru-RU")}
+                  </Badge>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <p className="text-sm">
-        <Link href="/app/inquiries" className="text-blue-700 hover:underline">
+        <Link
+          href="/app/inquiries"
+          className="font-semibold text-[var(--navy-800)] underline-offset-2 hover:text-[var(--accent-hover)] hover:underline"
+        >
           Перейти к обращениям →
         </Link>
       </p>
