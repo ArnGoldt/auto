@@ -53,6 +53,30 @@ export default function HomePage() {
             </li>
           ))}
         </ul>
+        <section className="mt-16 rounded-[var(--radius-xl)] border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+          <h2 className="text-lg font-semibold text-white">Демо-доступ</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Пароль для всех учёток: <span className="font-mono text-amber-400/90">demo1234</span>
+          </p>
+          <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+            <li>
+              <span className="text-slate-400">Менеджер:</span>{" "}
+              <span className="font-medium">manager@demo.local</span>
+            </li>
+            <li>
+              <span className="text-slate-400">Администратор сети:</span>{" "}
+              <span className="font-medium">admin@demo.local</span>
+            </li>
+            <li>
+              <span className="text-slate-400">Мастер:</span>{" "}
+              <span className="font-medium">master1@demo.local</span>
+            </li>
+            <li>
+              <span className="text-slate-400">QC:</span>{" "}
+              <span className="font-medium">qc@demo.local</span>
+            </li>
+          </ul>
+        </section>
         <PromotionsShowcase />
       </div>
     </div>

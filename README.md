@@ -36,6 +36,7 @@ npm run dev
 ## Маршруты
 
 - `/app` — менеджер (desktop)
+- `/app/admin` — администрирование сети (только `NETWORK_ADMIN` / `NETWORK_DIRECTOR`): сотрудники, филиалы, организация
 - `/master` — мастер (mobile-first)
 - `/client` — личный кабинет клиента
 - `/request` — публичная заявка (только лид)

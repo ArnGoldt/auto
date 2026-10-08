@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { AppShell, Button } from "@/components/ui-shell";
 import { requireStaff } from "@/lib/staff-data";
 import { staffHomePath } from "@/lib/rbac";
+import { isNetworkAdminRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { staffLogout } from "@/app/actions/auth";
 
@@ -28,6 +29,9 @@ export default async function ManagerAppLayout({
     { href: "/app/promotions", label: "Акции" },
     { href: "/app/workshops", label: "Мастерские" },
     { href: "/app/director", label: "Показатели" },
+    ...(isNetworkAdminRole(session.role)
+      ? [{ href: "/app/admin", label: "Администрирование" }]
+      : []),
   ];
 
   return (

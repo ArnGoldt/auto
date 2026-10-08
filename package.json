@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
-    "test": "tsx --test src/lib/rules.test.ts",
+    "test": "tsx --test src/lib/rules.test.ts src/lib/rbac.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
