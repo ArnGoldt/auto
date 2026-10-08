@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { getStaffSession } from "@/lib/session";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { staffUsers } from "@/db/schema";
 import { isNetworkAdminRole } from "@/lib/roles";
@@ -18,7 +18,7 @@ export async function requireStaff(roles?: string[]) {
 export async function requireNetworkAdmin() {
   const session = await getStaffSession();
   if (!session) redirect("/login");
-  if (!isNetworkAdminRole(session.role)) notFound();
+  if (!isNetworkAdminRole(session.role)) redirect("/app/access-denied");
   const user = await db.query.staffUsers.findFirst({
     where: eq(staffUsers.id, session.userId),
   });
