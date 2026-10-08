@@ -2,15 +2,19 @@ import { relations } from "drizzle-orm";
 import {
   checklistItems,
   clientAccounts,
+  clientLoyalty,
   clients,
   estimateLines,
   estimateVersions,
   inquiries,
+  loyaltyTransactions,
   memberships,
   operationChecklists,
   operations,
   orders,
   organizations,
+  promotionRedemptions,
+  promotions,
   staffUsers,
   supplements,
   vehicles,
@@ -32,7 +36,38 @@ export const workshopsRelations = relations(workshops, ({ one, many }) => ({
 export const clientsRelations = relations(clients, ({ many, one }) => ({
   vehicles: many(vehicles),
   account: one(clientAccounts),
+  loyalty: one(clientLoyalty),
+  loyaltyTransactions: many(loyaltyTransactions),
 }));
+
+export const clientLoyaltyRelations = relations(clientLoyalty, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientLoyalty.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const promotionsRelations = relations(promotions, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [promotions.organizationId],
+    references: [organizations.id],
+  }),
+  workshop: one(workshops, {
+    fields: [promotions.workshopId],
+    references: [workshops.id],
+  }),
+  redemptions: many(promotionRedemptions),
+}));
+
+export const loyaltyTransactionsRelations = relations(
+  loyaltyTransactions,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [loyaltyTransactions.clientId],
+      references: [clients.id],
+    }),
+  }),
+);
 
 export const clientAccountsRelations = relations(clientAccounts, ({ one }) => ({
   client: one(clients, {

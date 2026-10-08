@@ -1,9 +1,17 @@
 import { createClientPortalAccess } from "@/app/actions/manager";
+import { adjustClientLoyaltyPoints } from "@/app/actions/promotions";
 import { db } from "@/db";
-import { clientAccounts, clients, orders, vehicles } from "@/db/schema";
+import {
+  clientAccounts,
+  clientLoyalty,
+  clients,
+  loyaltyTransactions,
+  orders,
+  vehicles,
+} from "@/db/schema";
 import { Button, Field, Input } from "@/components/ui-shell";
 import { requireStaff } from "@/lib/staff-data";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 
 export default async function ClientDetailPage({
@@ -27,6 +35,14 @@ export default async function ClientDetailPage({
   const account = await db.query.clientAccounts.findFirst({
     where: eq(clientAccounts.clientId, id),
   });
+  const loyalty = await db.query.clientLoyalty.findFirst({
+    where: eq(clientLoyalty.clientId, id),
+  });
+  const loyaltyHistory = await db.query.loyaltyTransactions.findMany({
+    where: eq(loyaltyTransactions.clientId, id),
+    orderBy: [desc(loyaltyTransactions.createdAt)],
+    limit: 10,
+  });
 
   return (
     <div className="space-y-8">
@@ -36,6 +52,50 @@ export default async function ClientDetailPage({
           {client.phone} · {client.email ?? "email не указан"}
         </p>
       </div>
+
+      <section className="rounded-xl border bg-white p-4">
+        <h3 className="font-medium">Баллы лояльности</h3>
+        <p className="mt-2 text-3xl font-bold tabular-nums text-[var(--navy-900)]">
+          {loyalty?.pointsBalance ?? 0}
+          <span className="ml-2 text-base font-normal text-zinc-500">баллов</span>
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          1% от суммы заказа при выдаче авто · 100 баллов = 100 ₽ (скоро)
+        </p>
+        <ul className="mt-4 space-y-1 text-sm text-zinc-600">
+          {loyaltyHistory.map((t) => (
+            <li key={t.id} className="flex justify-between gap-2">
+              <span>
+                {t.reason}{" "}
+                <span className="text-xs text-zinc-400">
+                  {t.createdAt.toLocaleString("ru-RU")}
+                </span>
+              </span>
+              <span className={t.delta >= 0 ? "text-emerald-700" : "text-red-600"}>
+                {t.delta >= 0 ? "+" : ""}
+                {t.delta}
+              </span>
+            </li>
+          ))}
+          {loyaltyHistory.length === 0 && (
+            <li className="text-zinc-400">Пока нет операций</li>
+          )}
+        </ul>
+        <form action={adjustClientLoyaltyPoints} className="mt-4 flex flex-wrap gap-2">
+          <input type="hidden" name="clientId" value={client.id} />
+          <Input
+            name="delta"
+            type="number"
+            placeholder="+/- баллы"
+            className="max-w-[120px]"
+            required
+          />
+          <Input name="reason" placeholder="Комментарий" className="min-w-[200px]" />
+          <Button type="submit" variant="secondary" size="sm">
+            Корректировка
+          </Button>
+        </form>
+      </section>
 
       <section className="rounded-xl border bg-white p-4">
         <h3 className="font-medium">Автомобили</h3>

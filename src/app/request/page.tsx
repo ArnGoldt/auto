@@ -14,8 +14,14 @@ import {
   Textarea,
 } from "@/components/ui-shell";
 import Link from "next/link";
+import { PromotionsShowcase } from "@/components/promotions-showcase";
 
-export default async function PublicRequestPage() {
+export default async function PublicRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ promo?: string }>;
+}) {
+  const { promo } = await searchParams;
   const branches = await db.query.workshops.findMany({
     where: eq(workshops.active, true),
   });
@@ -55,6 +61,9 @@ export default async function PublicRequestPage() {
           <Field label="Описание">
             <Textarea name="description" rows={4} required />
           </Field>
+          <Field label="Промокод (если есть)">
+            <Input name="promoCode" defaultValue={promo ?? ""} placeholder="Например SPRING10" />
+          </Field>
           <label className="mb-4 flex gap-3 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-3 text-sm leading-snug">
             <input
               type="checkbox"
@@ -69,6 +78,7 @@ export default async function PublicRequestPage() {
           </Button>
         </form>
       </Card>
+      <PromotionsShowcase compact />
       <p className="mt-6 text-center text-sm text-[var(--muted)]">
         <Link
           href="/"

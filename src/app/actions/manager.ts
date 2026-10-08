@@ -4,8 +4,6 @@ import { db } from "@/db";
 import {
   clientAccounts,
   clients,
-  estimateLines,
-  estimateVersions,
   inquiries,
   managerReminders,
   operations,
@@ -19,10 +17,14 @@ import {
 import { getStaffSession } from "@/lib/session";
 import { hashPassword } from "@/lib/password";
 import { writeAudit } from "@/lib/audit";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supplementBlocksWork } from "@/lib/rules";
+import {
+  createEstimateRevisionFromLines,
+  getLatestEstimateForOrder,
+} from "@/lib/estimate";
 
 async function requireManager() {
   const session = await getStaffSession();
@@ -44,6 +46,7 @@ export async function createPublicInquiry(formData: FormData) {
   const contactPhone = String(formData.get("contactPhone") ?? "");
   const contactEmail = String(formData.get("contactEmail") ?? "");
   const pdConsent = formData.get("pdConsent") === "on";
+  const promoCode = String(formData.get("promoCode") ?? "").trim() || null;
   if (!pdConsent) redirect("/request?error=consent");
 
   const ws = await db.query.workshops.findFirst({
@@ -64,8 +67,20 @@ export async function createPublicInquiry(formData: FormData) {
       workTypes,
       description,
       pdConsent: true,
+      promoCode: promoCode?.toUpperCase() ?? null,
     })
     .returning();
+
+  if (promoCode) {
+    await writeAudit({
+      organizationId: ws.organizationId,
+      workshopId,
+      entityType: "inquiry",
+      entityId: inq.id,
+      action: "promotion.code_attached",
+      payload: { promoCode: promoCode.toUpperCase() },
+    });
+  }
 
   await db.insert(managerReminders).values({
     organizationId: ws.organizationId,
@@ -217,29 +232,29 @@ export async function addEstimateVersion(formData: FormData) {
   const operationName = String(formData.get("operation"));
   const priceRub = Number(formData.get("priceRub"));
 
-  const last = await db.query.estimateVersions.findFirst({
-    where: eq(estimateVersions.orderId, orderId),
-    orderBy: [desc(estimateVersions.versionNumber)],
-  });
-  const versionNumber = (last?.versionNumber ?? 0) + 1;
-  const kind = versionNumber === 1 ? "PRELIMINARY" : "REVISION";
-
-  const [ver] = await db
-    .insert(estimateVersions)
-    .values({
-      orderId,
-      kind: kind as "PRELIMINARY" | "REVISION",
-      versionNumber,
-      createdByUserId: session.userId,
-    })
-    .returning();
-
-  await db.insert(estimateLines).values({
-    estimateVersionId: ver.id,
+  const { lines: prevLines } = await getLatestEstimateForOrder(orderId);
+  const copied = prevLines.map((l) => ({
+    lineKind: l.lineKind ?? ("WORK" as const),
+    zone: l.zone,
+    operation: l.operation,
+    laborHours: l.laborHours,
+    materials: l.materials,
+    priceRub: l.priceRub,
+    promotionId: l.promotionId,
+    sortOrder: l.sortOrder ?? 0,
+  }));
+  copied.push({
+    lineKind: "WORK" as const,
     zone,
     operation: operationName,
+    laborHours: null,
+    materials: null,
     priceRub,
+    promotionId: null,
+    sortOrder: copied.length,
   });
+
+  await createEstimateRevisionFromLines(orderId, session.userId, copied);
 
   revalidatePath(`/app/orders/${orderId}`);
 }

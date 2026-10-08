@@ -25,6 +25,7 @@ export default async function ManagerAppLayout({
     { href: "/app/clients", label: "Клиенты" },
     { href: "/app/inquiries", label: "Обращения" },
     { href: "/app/orders", label: "Заказы" },
+    { href: "/app/promotions", label: "Акции" },
     { href: "/app/workshops", label: "Мастерские" },
     { href: "/app/director", label: "Показатели" },
   ];

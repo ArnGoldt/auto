@@ -17,6 +17,8 @@ import {
   supplements,
   workshopResources,
   managerReminders,
+  promotions,
+  clientLoyalty,
 } from "./schema";
 import { hashPassword } from "../lib/password";
 import { eq } from "drizzle-orm";
@@ -292,8 +294,59 @@ async function main() {
     },
   ]);
 
+  const promoFrom = new Date(Date.now() - 7 * 86400000);
+  const promoTo = new Date(Date.now() + 180 * 86400000);
+
+  await db.insert(promotions).values([
+    {
+      organizationId: org.id,
+      name: "Весенняя покраска −10%",
+      description: "На локальную и полную покраску при записи с сайта",
+      type: "PERCENT",
+      value: 10,
+      minOrderAmountRub: 15000,
+      validFrom: promoFrom,
+      validTo: promoTo,
+      active: true,
+      code: "SPRING10",
+      maxRedemptions: 100,
+      createdByUserId: manager.id,
+    },
+    {
+      organizationId: org.id,
+      name: "Первый визит −2000 ₽",
+      description: "Для новых клиентов после осмотра",
+      type: "FIXED",
+      value: 2000,
+      validFrom: promoFrom,
+      validTo: promoTo,
+      active: true,
+      code: "WELCOME2K",
+      createdByUserId: manager.id,
+    },
+    {
+      organizationId: org.id,
+      workshopId: ws[0].id,
+      name: "Север: антикор −15%",
+      description: "Только филиал «Север — покраска»",
+      type: "PERCENT",
+      value: 15,
+      validFrom: promoFrom,
+      validTo: promoTo,
+      active: true,
+      code: "NORTH15",
+      createdByUserId: manager.id,
+    },
+  ]);
+
+  await db.insert(clientLoyalty).values({
+    clientId: client.id,
+    pointsBalance: 350,
+  });
+
   console.log("Seed OK. Demo password for all staff: demo1234");
   console.log("Manager:", manager.email, "Master1:", master1.email);
+  console.log("Promo codes: SPRING10, WELCOME2K, NORTH15");
 }
 
 main()
