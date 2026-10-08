@@ -1,4 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import { BrandMark, LinkButton } from "@/components/ui-shell";
+import { PromotionsShowcase } from "@/components/promotions-showcase";
 
 export default function HomePage() {
   return (
@@ -50,6 +53,7 @@ export default function HomePage() {
             </li>
           ))}
         </ul>
+        <PromotionsShowcase />
       </div>
     </div>
   );

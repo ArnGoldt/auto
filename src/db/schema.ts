@@ -67,6 +67,19 @@ export const estimateKindEnum = pgEnum("estimate_kind", [
   "REVISION",
 ]);
 
+export const promotionTypeEnum = pgEnum("promotion_type", ["PERCENT", "FIXED"]);
+
+export const estimateLineKindEnum = pgEnum("estimate_line_kind", [
+  "WORK",
+  "DISCOUNT",
+]);
+
+export const loyaltyTierEnum = pgEnum("loyalty_tier", [
+  "BRONZE",
+  "SILVER",
+  "GOLD",
+]);
+
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -168,6 +181,7 @@ export const inquiries = pgTable("inquiries", {
   workTypes: text("work_types"),
   description: text("description"),
   pdConsent: boolean("pd_consent").default(false),
+  promoCode: text("promo_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -210,16 +224,73 @@ export const estimateVersions = pgTable("estimate_versions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const promotions = pgTable("promotions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .notNull()
+    .references(() => organizations.id),
+  workshopId: uuid("workshop_id").references(() => workshops.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: promotionTypeEnum("type").notNull(),
+  value: integer("value").notNull(),
+  minOrderAmountRub: integer("min_order_amount_rub"),
+  validFrom: timestamp("valid_from").notNull(),
+  validTo: timestamp("valid_to").notNull(),
+  active: boolean("active").default(true).notNull(),
+  code: text("code"),
+  maxRedemptions: integer("max_redemptions"),
+  createdByUserId: uuid("created_by_user_id").references(() => staffUsers.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const clientLoyalty = pgTable("client_loyalty", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id)
+    .unique(),
+  pointsBalance: integer("points_balance").default(0).notNull(),
+  tier: loyaltyTierEnum("tier"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const loyaltyTransactions = pgTable("loyalty_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => clients.id),
+  delta: integer("delta").notNull(),
+  reason: text("reason").notNull(),
+  orderId: uuid("order_id").references(() => orders.id),
+  promotionId: uuid("promotion_id").references(() => promotions.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const promotionRedemptions = pgTable("promotion_redemptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  promotionId: uuid("promotion_id")
+    .notNull()
+    .references(() => promotions.id),
+  orderId: uuid("order_id").references(() => orders.id),
+  inquiryId: uuid("inquiry_id").references(() => inquiries.id),
+  clientId: uuid("client_id").references(() => clients.id),
+  appliedAmountRub: integer("applied_amount_rub").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const estimateLines = pgTable("estimate_lines", {
   id: uuid("id").primaryKey().defaultRandom(),
   estimateVersionId: uuid("estimate_version_id")
     .notNull()
     .references(() => estimateVersions.id),
+  lineKind: estimateLineKindEnum("line_kind").default("WORK").notNull(),
   zone: text("zone"),
   operation: text("operation").notNull(),
   laborHours: numeric("labor_hours", { precision: 8, scale: 2 }),
   materials: text("materials"),
   priceRub: integer("price_rub").notNull(),
+  promotionId: uuid("promotion_id").references(() => promotions.id),
   sortOrder: integer("sort_order").default(0),
 });
 

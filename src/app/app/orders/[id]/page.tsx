@@ -4,6 +4,10 @@ import {
   createOperationWithChecklist,
   createSupplement,
 } from "@/app/actions/manager";
+import {
+  applyPromotionToOrder,
+  markOrderDelivered,
+} from "@/app/actions/promotions";
 import { approveQc } from "@/app/actions/qc";
 import { db } from "@/db";
 import {
@@ -21,6 +25,8 @@ import {
 import { Badge, Button, Field, Input, Textarea } from "@/components/ui-shell";
 import { requireStaff } from "@/lib/staff-data";
 import { formatRub } from "@/lib/utils";
+import { estimateGrandTotalRub, estimateWorkSubtotalRub } from "@/lib/rules";
+import { listApplicablePromotionsForOrder } from "@/lib/promotions-query";
 import { eq, desc, and } from "drizzle-orm";
 import Link from "next/link";
 
@@ -52,7 +58,12 @@ export default async function OrderDetailPage({
       })
     : [];
 
-  const total = lines.reduce((s, l) => s + l.priceRub, 0);
+  const subtotal = estimateWorkSubtotalRub(lines);
+  const total = estimateGrandTotalRub(lines);
+  const activePromos = await listApplicablePromotionsForOrder(
+    order.organizationId,
+    order.workshopId,
+  );
   const ops = await db.query.operations.findMany({
     where: eq(operations.orderId, id),
   });
@@ -82,9 +93,17 @@ export default async function OrderDetailPage({
           {order.promisedDateCurrent?.toLocaleDateString("ru-RU")} (изначально{" "}
           {order.promisedDateOriginal?.toLocaleDateString("ru-RU")})
         </p>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           <Badge>продажа: {order.salesStage}</Badge>
           <Badge>производство: {order.productionStage}</Badge>
+          {order.productionStage !== "DELIVERED" && (
+            <form action={markOrderDelivered}>
+              <input type="hidden" name="orderId" value={id} />
+              <Button type="submit" size="sm" variant="secondary">
+                Выдать авто (начислить баллы)
+              </Button>
+            </form>
+          )}
         </div>
         <Link href={`/app/clients/${order.clientId}`} className="mt-2 inline-block text-sm text-blue-700">
           Карточка клиента и доступ в ЛК →
@@ -95,7 +114,10 @@ export default async function OrderDetailPage({
         <h3 className="font-medium">Смета {latest ? `(v${latest.versionNumber})` : ""}</h3>
         <ul className="mt-2 space-y-1 text-sm">
           {lines.map((l) => (
-            <li key={l.id} className="flex justify-between gap-4">
+            <li
+              key={l.id}
+              className={`flex justify-between gap-4 ${l.lineKind === "DISCOUNT" ? "text-emerald-700" : ""}`}
+            >
               <span>
                 {l.zone ? `${l.zone}: ` : ""}
                 {l.operation}
@@ -104,7 +126,37 @@ export default async function OrderDetailPage({
             </li>
           ))}
         </ul>
+        {subtotal !== total && (
+          <p className="mt-2 text-sm text-zinc-600">
+            Работы: {formatRub(subtotal)} · скидка: {formatRub(total - subtotal)}
+          </p>
+        )}
         <p className="mt-2 font-semibold">Итого: {formatRub(total)}</p>
+        <div className="mt-4 space-y-3 rounded-lg border border-dashed p-3">
+          <p className="text-sm font-medium">Скидка / акция</p>
+          <form action={applyPromotionToOrder} className="flex flex-wrap gap-2">
+            <input type="hidden" name="orderId" value={id} />
+            <select name="promotionId" className="rounded border px-2 py-1 text-sm">
+              <option value="">Выберите акцию</option>
+              {activePromos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.code ? ` (${p.code})` : ""}
+                </option>
+              ))}
+            </select>
+            <Button type="submit" variant="secondary" size="sm">
+              Применить
+            </Button>
+          </form>
+          <form action={applyPromotionToOrder} className="flex flex-wrap gap-2">
+            <input type="hidden" name="orderId" value={id} />
+            <Input name="promoCode" placeholder="Промокод" className="max-w-[160px]" />
+            <Button type="submit" variant="secondary" size="sm">
+              По коду
+            </Button>
+          </form>
+        </div>
         <form action={addEstimateVersion} className="mt-4 grid gap-2 md:grid-cols-4">
           <input type="hidden" name="orderId" value={id} />
           <Input name="zone" placeholder="Зона" required />

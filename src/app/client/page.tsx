@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { decideSupplement } from "@/app/actions/client-portal";
 import { db } from "@/db";
 import {
+  clientLoyalty,
   clients,
   estimateLines,
   estimateVersions,
@@ -14,6 +15,8 @@ import {
 } from "@/db/schema";
 import { getClientSession } from "@/lib/session";
 import { formatRub } from "@/lib/utils";
+import { estimateGrandTotalRub } from "@/lib/rules";
+import { listActiveNetworkPromotions } from "@/lib/promotions-query";
 import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Button, Badge, Card, EmptyState } from "@/components/ui-shell";
@@ -25,6 +28,12 @@ export default async function ClientHomePage() {
   const client = await db.query.clients.findFirst({
     where: eq(clients.id, session.clientId),
   });
+  const loyalty = await db.query.clientLoyalty.findFirst({
+    where: eq(clientLoyalty.clientId, session.clientId),
+  });
+  const networkPromos = client
+    ? await listActiveNetworkPromotions(client.organizationId)
+    : [];
 
   const clientOrders = await db.query.orders.findMany({
     where: eq(orders.clientId, session.clientId),
@@ -53,7 +62,8 @@ export default async function ClientHomePage() {
             where: eq(estimateLines.estimateVersionId, est.id),
           })
         : [];
-      const total = lines.reduce((s, l) => s + l.priceRub, 0);
+      const total = estimateGrandTotalRub(lines);
+      const discountLines = lines.filter((l) => l.lineKind === "DISCOUNT");
       return {
         order,
         vehicle,
@@ -61,6 +71,7 @@ export default async function ClientHomePage() {
         events: events.filter((e) => e.visibleToClient),
         pendingSupps: pendingSupps.filter((s) => s.status === "PENDING_CLIENT"),
         total,
+        discountLines,
       };
     }),
   );
@@ -74,7 +85,31 @@ export default async function ClientHomePage() {
         <p className="mt-1 text-sm text-[var(--muted)]">
           Ваши ремонты в сети мастерских
         </p>
+        <p className="mt-3 text-sm font-medium text-[var(--navy-800)]">
+          Баллы: {loyalty?.pointsBalance ?? 0}
+        </p>
       </div>
+
+      {networkPromos.length > 0 && (
+        <Card padding="md">
+          <p className="font-semibold text-[var(--navy-900)]">Действующие акции сети</p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {networkPromos.slice(0, 3).map((p) => (
+              <li key={p.id} className="rounded-lg bg-[var(--surface-muted)] p-3">
+                <p className="font-medium">{p.name}</p>
+                {p.description && (
+                  <p className="text-[var(--muted)]">{p.description}</p>
+                )}
+                {p.code && (
+                  <p className="mt-1 text-xs text-[var(--accent-foreground)]">
+                    Промокод: {p.code}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {orderViews.length === 0 && (
         <EmptyState
@@ -84,7 +119,7 @@ export default async function ClientHomePage() {
       )}
 
       {orderViews.map(
-        ({ order, vehicle, workshop, events, pendingSupps, total }) => (
+        ({ order, vehicle, workshop, events, pendingSupps, total, discountLines }) => (
           <Card key={order.id} padding="lg">
             <h3 className="text-lg font-bold text-[var(--navy-900)]">
               {vehicle?.make} {vehicle?.model}
@@ -101,6 +136,15 @@ export default async function ClientHomePage() {
               </Badge>
               <Badge variant="success">к оплате: {formatRub(total)}</Badge>
             </div>
+            {discountLines.length > 0 && (
+              <ul className="mt-3 space-y-1 text-sm text-emerald-800">
+                {discountLines.map((l) => (
+                  <li key={l.id}>
+                    {l.operation}: {formatRub(l.priceRub)}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div className="rounded-[var(--radius-lg)] bg-[var(--surface-muted)] p-4 text-sm">
