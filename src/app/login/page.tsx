@@ -16,7 +16,7 @@ export default function StaffLoginPage() {
             Вход для сотрудников
           </h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Менеджер, мастер, контроль качества
+            Менеджер, мастер, контроль качества или администратор сети
           </p>
           <form action={staffLogin} className="mt-6">
             <Field label="Email">
